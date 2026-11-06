@@ -1,1 +1,433 @@
-my first game
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Hardest Obby - 500 Levels 2D Rage Platformer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@600;700;800&display=swap');
+        *{user-select:none;-webkit-user-select:none;touch-action:manipulation}
+        body{background-color:#090d16;font-family:'Rajdhani',sans-serif;overflow:hidden}
+        .font-pixel{font-family:'Press Start 2P',monospace}
+        #game-container{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#1e1b4b 0%,#090d16 100%)}
+        canvas{display:block;box-shadow:0 0 40px rgba(239,68,68,.25);border-radius:12px;background:#0b0f19;image-rendering:pixelated}
+        .btn-rage{transition:all .1s ease;box-shadow:0 4px 0 #000}
+        .btn-rage:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+        .shake{animation:shakeAnim .25s cubic-bezier(.36,.07,.19,.97) both}
+        @keyframes shakeAnim{10%,90%{transform:translate3d(-3px,0,0)}20%,80%{transform:translate3d(5px,0,0)}30%,50%,70%{transform:translate3d(-7px,0,0)}40%,60%{transform:translate3d(7px,0,0)}}
+        .touch-control{display:none}
+        @media(pointer:coarse){.touch-control{display:flex}}
+    </style>
+</head>
+<body class="text-white">
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="absolute inset-0 pointer-events-none p-3 md:p-6 flex flex-col justify-between z-10">
+        <div class="flex items-center justify-between gap-2 w-full">
+            <div class="flex items-center gap-3 bg-slate-900/90 border-2 border-red-600/80 p-2.5 px-4 rounded-2xl backdrop-blur-md pointer-events-auto shadow-lg">
+                <div class="bg-red-600 p-2 rounded-xl text-yellow-300 font-pixel text-xs animate-pulse">
+                    <i class="fa-solid fa-skull"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg md:text-xl font-extrabold tracking-wider text-red-500 uppercase leading-none font-pixel">THE HARDEST OBBY</h1>
+                    <div class="flex items-center gap-3 text-xs text-slate-300 font-bold mt-1">
+                        <span>TOTAL MATI: <span id="death-counter" class="text-red-400 font-pixel">0</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 pointer-events-auto">
+                <div class="bg-slate-900/90 border-2 border-slate-700 px-4 py-2 rounded-2xl backdrop-blur-md flex items-center gap-4 shadow-lg">
+                    <div class="text-center">
+                        <div class="text-[9px] font-pixel text-slate-400 uppercase">LEVEL</div>
+                        <div id="level-display" class="text-xl md:text-2xl font-black text-cyan-400 font-pixel leading-none">1</div>
+                    </div>
+                    <div class="h-6 w-0.5 bg-slate-700"></div>
+                    <div class="text-center">
+                        <div class="text-[9px] font-pixel text-slate-400 uppercase">MAX</div>
+                        <div id="max-level-display" class="text-xl md:text-2xl font-black text-amber-400 font-pixel leading-none">1</div>
+                    </div>
+                </div>
+                <button id="btn-sound" class="btn-rage bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-xl border border-slate-600">
+                    <i class="fa-solid fa-volume-high text-base" id="sound-icon"></i>
+                </button>
+                <button id="btn-restart" class="btn-rage bg-red-600 hover:bg-red-500 text-white p-3 rounded-xl border border-red-400" title="Ulangi Level Ini">
+                    <i class="fa-solid fa-rotate-right text-base"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="taunt-banner" class="opacity-0 transition-all duration-200 self-center bg-red-950/90 border-2 border-red-500 px-6 py-3 rounded-2xl text-center shadow-2xl backdrop-blur-md transform translate-y-2 max-w-md">
+            <div id="taunt-title" class="text-xs font-pixel text-amber-400 mb-1">SKILL ISSUE!</div>
+            <div id="taunt-text" class="text-sm md:text-base font-bold text-white leading-tight">Mati di level 1, coba lagi pakai mata!</div>
+        </div>
+
+        <div class="flex flex-col md:flex-row items-end justify-between w-full gap-2">
+            <div class="hidden md:flex items-center gap-3 bg-slate-900/80 border border-slate-800 px-4 py-2 rounded-xl text-xs text-slate-300">
+                <span class="text-amber-400 font-bold font-pixel">KONTROL:</span>
+                <span><kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-white font-mono">A/D</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-white font-mono">← →</kbd> Jalan</span>
+                <span><kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-white font-mono">W</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-white font-mono">Space</kbd> Lompat</span>
+                <span><kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-white font-mono">R</kbd> Restart</span>
+            </div>
+
+            <div class="touch-control w-full flex items-center justify-between pointer-events-auto px-1 pb-1">
+                <div class="flex gap-2">
+                    <button id="btn-touch-left" class="w-16 h-16 bg-slate-800/90 active:bg-red-600/80 rounded-2xl border-2 border-slate-600 active:border-red-400 text-white text-2xl flex items-center justify-center font-bold shadow-xl">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <button id="btn-touch-right" class="w-16 h-16 bg-slate-800/90 active:bg-red-600/80 rounded-2xl border-2 border-slate-600 active:border-red-400 text-white text-2xl flex items-center justify-center font-bold shadow-xl">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+                <button id="btn-touch-jump" class="w-20 h-20 bg-emerald-600/90 active:bg-emerald-500 rounded-2xl border-2 border-emerald-400 text-white font-pixel text-xs shadow-xl flex items-center justify-center">JUMP</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="win-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 p-8 rounded-3xl border-4 border-amber-500 max-w-md w-full text-center space-y-6 shadow-2xl">
+            <i class="fa-solid fa-trophy text-7xl text-amber-400 animate-bounce"></i>
+            <h2 class="text-2xl font-pixel text-amber-400">TAMAT! 500 LEVELS!</h2>
+            <p class="text-sm text-slate-300 leading-relaxed font-bold">Kamu berhasil menaklukkan 500 level tersulit tanpa mengalami gangguan jiwa! Kamu adalah legenda sesungguhnya!</p>
+            <button id="btn-win-replay" class="w-full btn-rage py-4 bg-amber-500 hover:bg-amber-400 text-black font-pixel text-xs rounded-xl uppercase">MAIN LAGI DARI LEVEL 1</button>
+        </div>
+    </div>
+</div>
+
+<script>
+class SoundFX{
+    constructor(){this.ctx=null;this.muted=false}
+    init(){
+        if(!this.ctx){
+            const AudioCtx=window.AudioContext||window.webkitAudioContext;
+            if(AudioCtx)this.ctx=new AudioCtx()
+        }
+        if(this.ctx&&this.ctx.state==='suspended')this.ctx.resume()
+    }
+    playJump(){
+        if(this.muted)return;this.init();if(!this.ctx)return;
+        try{
+            const osc=this.ctx.createOscillator(),gain=this.ctx.createGain();
+            osc.type='square';
+            osc.frequency.setValueAtTime(180,this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(500,this.ctx.currentTime+.08);
+            gain.gain.setValueAtTime(.08,this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(.001,this.ctx.currentTime+.08);
+            osc.connect(gain);gain.connect(this.ctx.destination);
+            osc.start();osc.stop(this.ctx.currentTime+.08)
+        }catch(e){}
+    }
+    playDeath(){
+        if(this.muted)return;this.init();if(!this.ctx)return;
+        try{
+            const osc=this.ctx.createOscillator(),gain=this.ctx.createGain();
+            osc.type='sawtooth';
+            osc.frequency.setValueAtTime(300,this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40,this.ctx.currentTime+.22);
+            gain.gain.setValueAtTime(.18,this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(.001,this.ctx.currentTime+.22);
+            osc.connect(gain);gain.connect(this.ctx.destination);
+            osc.start();osc.stop(this.ctx.currentTime+.22)
+        }catch(e){}
+    }
+    playBounce(){
+        if(this.muted)return;this.init();if(!this.ctx)return;
+        try{
+            const osc=this.ctx.createOscillator(),gain=this.ctx.createGain();
+            osc.type='sine';
+            osc.frequency.setValueAtTime(200,this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(700,this.ctx.currentTime+.15);
+            gain.gain.setValueAtTime(.12,this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(.001,this.ctx.currentTime+.15);
+            osc.connect(gain);gain.connect(this.ctx.destination);
+            osc.start();osc.stop(this.ctx.currentTime+.15)
+        }catch(e){}
+    }
+    playWin(){
+        if(this.muted)return;this.init();if(!this.ctx)return;
+        try{
+            const now=this.ctx.currentTime;
+            [261.63,329.63,392,523.25].forEach((f,i)=>{
+                const osc=this.ctx.createOscillator(),gain=this.ctx.createGain();
+                osc.type='triangle';
+                osc.frequency.setValueAtTime(f,now+i*.06);
+                gain.gain.setValueAtTime(.1,now+i*.06);
+                gain.gain.exponentialRampToValueAtTime(.001,now+i*.06+.18);
+                osc.connect(gain);gain.connect(this.ctx.destination);
+                osc.start(now+i*.06);osc.stop(now+i*.06+.18)
+            })
+        }catch(e){}
+    }
+}
+const sound=new SoundFX();
+
+class PRNG{
+    constructor(seed){this.seed=seed%2147483647;if(this.seed<=0)this.seed+=2147483646}
+    next(){return this.seed=this.seed*16807%2147483647}
+    nextFloat(){return(this.next()-1)/2147483646}
+    range(min,max){return min+this.nextFloat()*(max-min)}
+    rangeInt(min,max){return Math.floor(this.range(min,max+1))}
+    choice(arr){return arr[this.rangeInt(0,arr.length-1)]}
+}
+
+const TAUNTS=[
+    "Lompat itu pakai tombol W/Space, bukan pakai emosi!",
+    "Duri sebesar itu masih distunduk?",
+    "Refleks kakek-kakek umur 90 tahun!",
+    "Level ini sebenernya gampang, kamunya aja yang...",
+    "Jangan banting HP/Keyboard kamu ya!",
+    "Turun level lagi haha, rasakan!",
+    "Hampir... tapi tetep aja mati!",
+    "Coba merem pas main, siapa tahu menang.",
+    "Gravitasi adalah musuh bebuyutanmu.",
+    "Skill issue terdeteksi!",
+    "Game ini gak salah, jari kamu yang salah.",
+    "Sudah level berapa? Oh turun lagi ya?",
+    "Mainnya pakai mata dong, kawan!"
+];
+
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+const CANVAS_WIDTH=960,CANVAS_HEIGHT=540;
+canvas.width=CANVAS_WIDTH;canvas.height=CANVAS_HEIGHT;
+
+function resizeCanvas(){
+    const padding=20;
+    const availableW=window.innerWidth-padding;
+    const availableH=window.innerHeight-padding;
+    const scale=Math.min(availableW/CANVAS_WIDTH,availableH/CANVAS_HEIGHT);
+    canvas.style.width=`${Math.floor(CANVAS_WIDTH*scale)}px`;
+    canvas.style.height=`${Math.floor(CANVAS_HEIGHT*scale)}px`;
+}
+window.addEventListener('resize',resizeCanvas);
+resizeCanvas();
+
+let currentLevel=1,maxLevelAchieved=1,deathCount=0;
+let isDead=false,isTransitioning=false,levelTime=0;
+const keys={left:false,right:false,jump:false,jumpPressed:false};
+
+const player={
+    x:60,y:400,w:22,h:28,vx:0,vy:0,
+    speed:380,accel:2200,friction:1800,
+    jumpForce:-600,gravity:1600,
+    isGrounded:false,coyoteTime:0,jumpBuffer:0,
+    gravityInverted:false,facing:1
+};
+
+let platforms=[],spikes=[],trollSpikes=[],bouncePads=[],portals=[],lasers=[],particles=[];
+let goal={x:0,y:0,w:32,h:48};
+let windForce=0,cameraShake=0;
+
+function loadSaveData(){
+    const cur=localStorage.getItem('tho_cur_lvl');
+    const max=localStorage.getItem('tho_max_lvl');
+    const deaths=localStorage.getItem('tho_deaths');
+    if(cur)currentLevel=Math.max(1,Math.min(500,parseInt(cur)));
+    if(max)maxLevelAchieved=Math.max(1,Math.min(500,parseInt(max)));
+    if(deaths)deathCount=parseInt(deaths);
+    if(currentLevel>maxLevelAchieved)maxLevelAchieved=currentLevel;
+    updateHUD()
+}
+function saveSaveData(){
+    localStorage.setItem('tho_cur_lvl',currentLevel);
+    localStorage.setItem('tho_max_lvl',maxLevelAchieved);
+    localStorage.setItem('tho_deaths',deathCount)
+}
+function updateHUD(){
+    document.getElementById('level-display').textContent=currentLevel;
+    document.getElementById('max-level-display').textContent=maxLevelAchieved;
+    document.getElementById('death-counter').textContent=deathCount
+}
+function triggerTaunt(msgTitle,msgText){
+    const banner=document.getElementById('taunt-banner');
+    document.getElementById('taunt-title').textContent=msgTitle;
+    document.getElementById('taunt-text').textContent=msgText;
+    banner.classList.remove('opacity-0','translate-y-2');
+    banner.classList.add('opacity-100','translate-y-0');
+    clearTimeout(banner.timeout);
+    banner.timeout=setTimeout(()=>{
+        banner.classList.remove('opacity-100','translate-y-0');
+        banner.classList.add('opacity-0','translate-y-2')
+    },2200)
+}
+
+function generateLevel(lvl){
+    platforms=[];spikes=[];trollSpikes=[];bouncePads=[];portals=[];lasers=[];particles=[];
+    windForce=0;levelTime=0;player.gravityInverted=false;
+    const rng=new PRNG(lvl*7777+101);
+
+    platforms.push({x:30,y:460,w:100,h:40,type:'solid'});
+    player.x=65;player.y=420;player.vx=0;player.vy=0;
+
+    const hasTrollSpikes=lvl>=5&&rng.nextFloat()>.3;
+    const hasMovingPlatforms=lvl>=15&&rng.nextFloat()>.4;
+    const hasBouncePads=lvl>=25&&rng.nextFloat()>.5;
+    const hasFadingPlatforms=lvl>=40&&rng.nextFloat()>.5;
+    const hasLasers=lvl>=60&&rng.nextFloat()>.5;
+    const hasGravityInvert=lvl>=80&&rng.nextFloat()>.7;
+    const hasWind=lvl>=100&&rng.nextFloat()>.7;
+    const hasConveyors=lvl>=120&&rng.nextFloat()>.5;
+
+    if(hasWind)windForce=rng.choice([-180,180]);
+
+    let currX=130,currY=460;
+    const platformCount=Math.min(22,6+Math.floor(lvl/20));
+
+    for(let i=0;i<platformCount;i++){
+        const gapX=rng.range(65,120+Math.min(60,lvl*.15));
+        const diffY=rng.range(-75,75);
+        currX+=gapX;
+        currY=Math.max(120,Math.min(480,currY+diffY));
+        const platW=Math.max(45,110-Math.min(50,lvl*.12));
+        const platH=20;
+
+        let platType='solid';
+        if(hasFadingPlatforms&&rng.nextFloat()>.6)platType='fading';
+        else if(hasConveyors&&rng.nextFloat()>.6)platType=rng.choice(['conveyor_left','conveyor_right']);
+
+        const newPlat={
+            x:currX,y:currY,w:platW,h:platH,type:platType,
+            opacity:1,fadeTimer:0,
+            moveDist:hasMovingPlatforms&&rng.nextFloat()>.5?rng.range(40,100):0,
+            moveSpeed:rng.range(1.5,3.5),
+            startX:currX,startY:currY,axis:rng.choice(['x','y'])
+        };
+        platforms.push(newPlat);
+
+        if(rng.nextFloat()>.35){
+            const spikeX=currX+rng.range(10,platW-20);
+            spikes.push({x:spikeX,y:currY-16,w:16,h:16,dir:'up'})
+        }
+        if(hasTrollSpikes&&rng.nextFloat()>.65){
+            const tX=currX+rng.range(5,platW-20);
+            trollSpikes.push({x:tX,y:currY,targetY:currY-16,w:16,h:16,triggered:false})
+        }
+        if(hasBouncePads&&rng.nextFloat()>.7){
+            bouncePads.push({x:currX+platW/2-12,y:currY-10,w:24,h:10,force:rng.range(-850,-1050)})
+        }
+        if(hasLasers&&rng.nextFloat()>.75){
+            lasers.push({x:currX+platW/2,y1:currY-120,y2:currY,cycle:rng.range(1.5,3),active:true})
+        }
+    }
+
+    goal.x=currX+100;goal.y=currY-48;
+    platforms.push({x:currX+80,y:currY,w:100,h:40,type:'solid'});
+
+    if(hasGravityInvert){
+        portals.push({x:300,y:200,w:32,h:48,type:'gravity'})
+    }
+}
+
+function triggerDeath(){
+    if(isDead||isTransitioning)return;
+    isDead=true;deathCount++;
+    sound.playDeath();cameraShake=12;
+
+    for(let i=0;i<20;i++){
+        particles.push({
+            x:player.x+player.w/2,y:player.y+player.h/2,
+            vx:(Math.random()-.5)*400,vy:(Math.random()-.5)*400,
+            size:Math.random()*6+2,color:'#ef4444',life:.4
+        })
+    }
+
+    const oldLvl=currentLevel;
+    currentLevel=Math.max(1,currentLevel-1);
+    saveSaveData();updateHUD();
+    const randomTaunt=PRNG?TAUNTS[Math.floor(Math.random()*TAUNTS.length)]:TAUNTS[0];
+    if(oldLvl>1)triggerTaunt(`TURUN KE LEVEL ${currentLevel}!`,randomTaunt);
+    else triggerTaunt('MATI DI LEVEL 1!',randomTaunt);
+
+    setTimeout(()=>{
+        generateLevel(currentLevel);
+        isDead=false
+    },500)
+}
+
+function triggerLevelWin(){
+    if(isTransitioning||isDead)return;
+    isTransitioning=true;sound.playWin();
+    if(currentLevel>=500){
+        document.getElementById('win-modal').classList.remove('hidden');
+        return
+    }
+    currentLevel++;
+    if(currentLevel>maxLevelAchieved)maxLevelAchieved=currentLevel;
+    saveSaveData();updateHUD();
+    triggerTaunt(`LEVEL ${currentLevel-1} SELESAI!`,'Lanjut ke siksaan berikutnya...');
+    setTimeout(()=>{
+        generateLevel(currentLevel);
+        isTransitioning=false
+    },400)
+}
+
+function updatePhysics(dt){
+    if(isDead||isTransitioning)return;
+    levelTime+=dt;
+
+    if(player.isGrounded)player.coyoteTime=.12;
+    else player.coyoteTime-=dt;
+
+    if(keys.jumpPressed){
+        player.jumpBuffer=.15;
+        keys.jumpPressed=false
+    }else player.jumpBuffer-=dt;
+
+    let dir=0;
+    if(keys.left)dir--;
+    if(keys.right)dir++;
+    if(dir!==0)player.facing=dir;
+
+    const targetVx=dir*player.speed+windForce;
+    if(dir!==0){
+        player.vx+=Math.sign(targetVx-player.vx)*player.accel*dt;
+        if(Math.abs(player.vx)>Math.abs(targetVx))player.vx=targetVx
+    }else{
+        if(player.vx>0)player.vx=Math.max(0,player.vx-player.friction*dt);
+        else if(player.vx<0)player.vx=Math.min(0,player.vx+player.friction*dt)
+    }
+
+    const effGravity=player.gravityInverted?-player.gravity:player.gravity;
+    player.vy+=effGravity*dt;
+    if(!keys.jump&&(player.gravityInverted?player.vy<0:player.vy<-200)){
+        player.vy+=effGravity*dt*1.5
+    }
+
+    if((player.jumpBuffer>0||keys.jump)&&(player.isGrounded||player.coyoteTime>0)){
+        player.vy=player.gravityInverted?-player.jumpForce:player.jumpForce;
+        player.coyoteTime=0;player.jumpBuffer=0;
+        player.isGrounded=false;sound.playJump()
+    }
+
+    const steps=4,subDt=dt/steps;
+    for(let s=0;s<steps;s++){
+        player.x+=player.vx*subDt;
+        checkCollisionsX();
+        player.y+=player.vy*subDt;
+        checkCollisionsY()
+    }
+
+    if(player.y>CANVAS_HEIGHT+100||player.y<-200||player.x<-50||player.x>CANVAS_WIDTH+100){
+        triggerDeath()
+    }
+    checkHazards()
+}
+
+function checkCollisionsX(){
+    for(let p of platforms){
+        if(p.type==='fading'&&p.opacity<.3)continue;
+        if(isAABBOverlap(player,p)){
+            if(player.vx>0)player.x=p.x-player.w;
+            else if(player.vx<0)player.x=p.x+p.w;
+            player.vx=0
+        }
+    }
+}
+
+function checkCollisionsY(){
+    for(let p of platforms){
+        if(p.type==='fading'&&p.opacity<.3)continue;
+        if(isA
